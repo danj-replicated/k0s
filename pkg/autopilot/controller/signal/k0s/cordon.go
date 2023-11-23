@@ -149,15 +149,12 @@ func (r *cordoning) drainNode(ctx context.Context, signalNode crcli.Object) erro
 	logger := r.log.WithField("signalnode", signalNode.GetName()).WithField("phase", "drain")
 
 	node := &corev1.Node{}
-	// if signalNode is a Node cast it to *corev1.Node
-	if signalNode.GetObjectKind().GroupVersionKind().Kind == "Node" {
-		var ok bool
-		node, ok = signalNode.(*corev1.Node)
-		if !ok {
-			return fmt.Errorf("failed to cast signalNode to *corev1.Node")
-		}
+	// check if we can convert the signalNode to a node
+	castNode, ok := signalNode.(*corev1.Node)
+	if ok {
+		node = castNode
 	} else {
-		//otherwise get node from client
+		// otherwise get the node from the APIserver
 		if err := r.client.Get(ctx, crcli.ObjectKey{Name: signalNode.GetName()}, node); err != nil {
 			return fmt.Errorf("failed to get node: %w", err)
 		}
